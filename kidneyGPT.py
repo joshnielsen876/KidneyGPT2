@@ -86,7 +86,7 @@ if "model" not in st.session_state:
 if 'disabled' not in st.session_state:
     st.session_state.disabled = False
 if 'return_filled_template' not in st.session_state:
-    st.session_state.return_filled_template = "Filled Template: \n"
+    st.session_state.return_filled_template = f"Filled Template: \n {Template}"
 
 # Setting system message
 
