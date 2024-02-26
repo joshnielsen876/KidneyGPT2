@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 import os
 # from chat_internal import get_challenge_tags
-
+from sidebar import sidebar
 from dotenv import load_dotenv
 
 load_dotenv()
