@@ -7,7 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-openai.api_key = st.secrets["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"] #insert your openai API
+sidebar()
+
+openai_api_key = st.session_state.get("OPENAI_API_KEY")
+
+
+if not openai_api_key:
+    st.warning(
+        "Enter your OpenAI API key in the sidebar. You can get a key at"
+        " https://platform.openai.com/account/api-keys."
+    )
 
 Template = """
 1. I first learned about living kidney donation through [source: online research/friend or family/doctor/other] and my current level of knowledge is [basic/moderate/advanced].
