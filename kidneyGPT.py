@@ -19,7 +19,7 @@ if not openai_api_key:
     )
 
 Template = """
-1. I first learned about living kidney donation through [source: online research/friend or family/doctor/other] and my current level of knowledge is [basic/moderate/advanced].
+1. I first learned about living kidney donation through [source] and my current level of knowledge is [level].
 2. The person in need of a kidney transplant is [relationship] to me, and their condition has been affecting their life for [duration]. Our relationship is [description].
 3. My initial reaction to the idea of donating a kidney was [reaction] because [reason].
 4. The main reasons I am considering donating a kidney are [motivations]. I [have/have not] discussed this with the potential recipient.
