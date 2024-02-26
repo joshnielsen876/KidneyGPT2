@@ -9,8 +9,8 @@ load_dotenv()
 
 sidebar()
 
-openai_api_key = st.session_state.get("OPENAI_API_KEY")
-
+# openai_api_key = st.session_state.get("OPENAI_API_KEY")
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 if not openai_api_key:
     st.warning(
