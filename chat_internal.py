@@ -7,9 +7,9 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 
 detected_text = """
-You must classify each AgriFood use case into multiple one-word tags that will later be used 
+You must classify each user's experience into multiple one-word tags that will later be used 
 to match the use case with a certain pre-existing template for defining the use case challenge in depth. 
-Each use case may have more than one tag and may be matched with more than one template. 
+Each user's experience may have more than one tag and may be matched with more than one template. 
 Your job is to provide the tags, NOT to find the challenge template to match the use case with. 
 
 The user input is a chat converation with an AI chatbot, so based on the chat conversation, please extract and understand the discussed usecase, and then classify this 
@@ -28,7 +28,7 @@ def read_list_from_file(file_path):
         list_from_file = eval(content)
     return list_from_file
 
-tag_list = read_list_from_file("tags_AVA.txt")
+tag_list = read_list_from_file("KidneyTags.txt")
 tags_str = ", ".join(tag_list)
 
 def get_challenge_tags(chat_convo):
