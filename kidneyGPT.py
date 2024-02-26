@@ -64,7 +64,7 @@ Share relevant information about living kidney donation as prompted by the userâ
 Direct users to resources for further reading or support, including websites, support groups, and professional counseling services.
 \n \n The template which needs to be filled is: """ + "\n" + Template + "\n \n"
 
-st.title("AVA")
+st.title("KidneyGPT")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
