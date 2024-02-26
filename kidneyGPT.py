@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 import os
-from chat_internal import get_challenge_tags
+# from chat_internal import get_challenge_tags
 
 from dotenv import load_dotenv
 
@@ -143,10 +143,10 @@ if user_input:
             chat_length= chat_length+1
             chat_history[chat_length] = {message["role"]: message["content"]}
     #print(chat_history)
-    temp_items = get_challenge_tags(str(chat_history))
+    # temp_items = get_challenge_tags(str(chat_history))
 
     # Sort the list based on the numeric values in descending order
     #print(items_temp)
-    st.session_state.return_filled_template = "Filled Template: \n" + temp_items
+    # st.session_state.return_filled_template = "Filled Template: \n" + temp_items
     st.session_state.disabled = False
     st.rerun()
