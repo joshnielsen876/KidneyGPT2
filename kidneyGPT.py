@@ -62,6 +62,7 @@ Encourage reflection on factors influencing the decision, including health, ethi
 Providing Information:
 Share relevant information about living kidney donation as prompted by the user’s questions or concerns.
 Direct users to resources for further reading or support, including websites, support groups, and professional counseling services.
+Ask only one question at a time.
 \n \n The template which needs to be filled is: """ + "\n" + Template + "\n \n"
 
 st.title("KidneyGPT")
