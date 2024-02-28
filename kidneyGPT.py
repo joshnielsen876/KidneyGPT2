@@ -71,13 +71,10 @@ def get_challenge_tags(chat_convo):
     global detected_text
     prompt = ""
     tag_cond = "give me the full or partialy filled use case template in markdown format: \n"
-    #tag_cond = tag_cond + " Sometimes the input tags are redundant, i.e. multiple tags have similar meaning/use, I want you to condense/club these similar tags and then classify the user-input usecases into multiple one-word clubbed/condensed/clustered tags. \n"
-    #tag_cond = tag_cond + " Based on the provided one-word tags, you must classify each user-given/input usecase (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into. each one-word tag is seperated by commas',' . Please refer to these one-word tags only, and classify the following user-input usecases (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into these mentioned tags only. You must classify each user-input AgriFood use case into multiple one-word tags given here. \n The multiple one-word tags are: "
-    #tag_cond = tag_cond + tags_str
     prompt = tag_cond + Template
 
     response = openai.ChatCompletion.create(
-                model="gpt-4-1106-preview",
+                model="gpt-3.5-turbo-0125",
                 messages=[{"role": "system", "content": prompt},
                             {"role": "user", "content": "Analyze the user chat conversation answers and based on this please fill in the provided usecase template. Analyze the user conversation answers and then based on the provided information fill the template and give me the full or partialy filled use case template in markdown format, if you didn't find any necessary infomration to fill a blank space in the sentence of the usecase template leave the blank space as it is, and only fill in the blank spaces which are fully or partially provided in the following user conversation answer: \n \n " + chat_convo}
                 ])
@@ -89,14 +86,15 @@ def analyze_and_fill_template(conversation_history, template):
 
     # Here, you'd call your second LLM to analyze the conversation.
     # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
-    analysis_response = openai.Completion.create(
-        model="gpt-4-1106-preview",  # Replace with your analysis model
-        prompt=f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}",
-        temperature=0.7,
-        max_tokens=1024,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
+    analysis_response = openai.chat.completions.create(
+        
+        model="gpt-3.5-turbo-0125",  # Replace with your analysis model
+        messages=[
+        {"role": "system", "content": "Your task is to fill the gaps in the sentences present the provided usecase template. I will give you the user's written answers (extracted from a chatbot conversation) and based on the provided answers you must fill and return me the filled (either full or partial) use case template.
+                            I will progressively provide you the answers in form of user conversations, you must analyze the user conversation asnwers and then fill the use case template.
+                            As I will be progressively providing you the answers, you can also progressively fill the use case template"},
+        {"role": "user", "content": f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}"}
+    ]
     )
     
     filled_template = analysis_response.choices[0].text.strip()
@@ -111,7 +109,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({"role": "system", "content": system_instructions})
     response_initial = openai.ChatCompletion.create(
-    model="gpt-4-1106-preview",
+    model="gpt-3.5-turbo-0125",
     #response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": system_instructions},
@@ -145,30 +143,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-def analyze_and_fill_template(conversation_history, template):
-    # Concatenate conversation history into a single string
-    conversation_text = " ".join([message["content"] for message in conversation_history if message["role"] in ["user", "assistant"]])
-
-    # Here, you'd call your second LLM to analyze the conversation.
-    # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
-    analysis_response = openai.Completion.create(
-        model="gpt-4-1106-preview",  # Replace with your analysis model
-        prompt=f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}",
-        temperature=0.7,
-        max_tokens=1024,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
-    )
-    
-    filled_template = analysis_response.choices[0].text.strip()
-    
-    # Here you would parse the filled_template to update your actual template variable
-    # This parsing will depend on how your LLM formats its response.
-    # For simplicity, I'm directly returning the filled or partially filled template.
-    
-    return filled_template
     
 # input from user
 user_input = st.chat_input("Your prompt",disabled=st.session_state.disabled)
