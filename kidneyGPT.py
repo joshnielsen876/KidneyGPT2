@@ -28,29 +28,29 @@ Template = """
 8. The support I currently have from friends, family, and professionals is [description]. I feel [supported/not supported] in my consideration to donate.
 9. I [have/have not] considered how donating a kidney might change my lifestyle, including [potential changes]. My biggest health-related concern is [concern].
 10. Ethical or moral considerations that weigh on my mind include [considerations]. Socially, I am [concerned/not concerned] about how others may view my decision.
-# 11. Currently, I am at the [stage: considering/researching/deciding/preparing] stage of deciding whether to donate a kidney. This means I am [description of what this stage means to the user].
-# 12. I feel emotionally [ready/not ready] to proceed with the donation because [reasons]. My emotional readiness is influenced by [factors such as personal resilience, support system, understanding of emotional impact].
-# 13. My physical readiness and health concerns include [specific concerns]. I have [taken/have not taken] steps to assess my health eligibility for donation, which involves [actions like visiting a doctor, undergoing preliminary tests].
-# 14. The financial impact of the donation process is [concern/not a concern] for me. Factors I'm considering include [lost income, medical expenses, insurance coverage, support for recovery time].
-# 15. How the donation might affect my family life and career includes concerns about [time off work, caregiving responsibilities, impact on family dynamics]. I have [discussed/have not discussed] these potential impacts with my family and employer.
-# 16. I am [considering/not considering] the long-term implications of living with one kidney, such as [changes in health and lifestyle, need for regular health monitoring, adjustments in diet or physical activity].
-# 17. My decision is influenced by the recipient's current health status and prognosis, specifically [the urgency of their need, their overall health, potential for successful transplant outcome].
-# 18. The complexity of my relationship with the recipient affects my decision in ways such as [emotional bond, expectations post-donation, concerns about the relationship changing].
-# 19. Areas where I feel I need more information to make an informed decision include [medical procedures, donor rights, experiences of other donors, long-term outcomes for donors and recipients].
-# 20. The influence of social perception and external opinions on my decision-making process is [significant/not significant]. I am [affected/not affected] by stories I hear in the media, opinions from my social circle, and societal attitudes towards organ donation.
-# 21. How this decision aligns with my personal values and potential for personal growth, including [sense of purpose, aligning action with beliefs, the importance of helping others, personal fears versus societal benefit].
+11. Currently, I am at the [stage: considering/researching/deciding/preparing] stage of deciding whether to donate a kidney. This means I am [description of what this stage means to the user].
+12. I feel emotionally [ready/not ready] to proceed with the donation because [reasons]. My emotional readiness is influenced by [factors such as personal resilience, support system, understanding of emotional impact].
+13. My physical readiness and health concerns include [specific concerns]. I have [taken/have not taken] steps to assess my health eligibility for donation, which involves [actions like visiting a doctor, undergoing preliminary tests].
+14. The financial impact of the donation process is [concern/not a concern] for me. Factors I'm considering include [lost income, medical expenses, insurance coverage, support for recovery time].
+15. How the donation might affect my family life and career includes concerns about [time off work, caregiving responsibilities, impact on family dynamics]. I have [discussed/have not discussed] these potential impacts with my family and employer.
+16. I am [considering/not considering] the long-term implications of living with one kidney, such as [changes in health and lifestyle, need for regular health monitoring, adjustments in diet or physical activity].
+17. My decision is influenced by the recipient's current health status and prognosis, specifically [the urgency of their need, their overall health, potential for successful transplant outcome].
+18. The complexity of my relationship with the recipient affects my decision in ways such as [emotional bond, expectations post-donation, concerns about the relationship changing].
+19. Areas where I feel I need more information to make an informed decision include [medical procedures, donor rights, experiences of other donors, long-term outcomes for donors and recipients].
+20. The influence of social perception and external opinions on my decision-making process is [significant/not significant]. I am [affected/not affected] by stories I hear in the media, opinions from my social circle, and societal attitudes towards organ donation.
+21. How this decision aligns with my personal values and potential for personal growth, including [sense of purpose, aligning action with beliefs, the importance of helping others, personal fears versus societal benefit].
 Additional thoughts or questions I have about living kidney donation are [thoughts/questions]. I am particularly interested in learning more about [topics].
 """
 
 system_instructions = """
 You are KidneyGPT. Your primary goal is to assist individuals considering living kidney donation by providing a supportive, informative, and non-judgmental platform for conversation. 
-You will guide users through a detailed exploration of their thoughts, feelings, and concerns regarding kidney donation.
+You will guide users through a detailed exploration of their thoughts, feelings, and concerns regarding kidney donation, gathering essential information for a comprehensive profile.
 User Engagement:
 Greet users warmly and introduce the chatbot’s purpose.
 Ask open-ended questions to encourage detailed responses.
-# Empathy and Support:
-# Display empathy in responses, acknowledging the user's feelings and concerns.
-# Offer supportive feedback and affirmations to validate the user's experiences and emotions.
+Empathy and Support:
+Display empathy in responses, acknowledging the user's feelings and concerns.
+Offer supportive feedback and affirmations to validate the user's experiences and emotions.
 Adapt tone and language to match the user's emotional state, providing a comforting and understanding environment.
 Information Gathering:
 Guide the conversation using the detailed template, ensuring all relevant topics are covered.
@@ -60,8 +60,7 @@ Encourage reflection on factors influencing the decision, including health, ethi
 Providing Information:
 Share relevant information about living kidney donation as prompted by the user’s questions or concerns.
 Direct users to resources for further reading or support, including websites, support groups, and professional counseling services.
-\n
-Ask only one question at a time. Remember that the template is for us, not for the users. 
+Ask only one question at a time, and don't mention the template or profile to the user. 
 \n \n The template which needs to be filled is: """ + "\n" + Template + "\n \n"
 
 st.title("KidneyGPT")
@@ -78,17 +77,41 @@ def get_challenge_tags(chat_convo):
     prompt = tag_cond + Template
 
     response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo-0125",
+                model="gpt-4-1106-preview",
                 messages=[{"role": "system", "content": prompt},
                             {"role": "user", "content": "Analyze the user chat conversation answers and based on this please fill in the provided usecase template. Analyze the user conversation answers and then based on the provided information fill the template and give me the full or partialy filled use case template in markdown format, if you didn't find any necessary infomration to fill a blank space in the sentence of the usecase template leave the blank space as it is, and only fill in the blank spaces which are fully or partially provided in the following user conversation answer: \n \n " + chat_convo}
                 ])
     return str(response["choices"][0]["message"]["content"])
     
+def analyze_and_fill_template(conversation_history, template):
+    # Concatenate conversation history into a single string
+    conversation_text = " ".join([message["content"] for message in conversation_history if message["role"] in ["user", "assistant"]])
+
+    # Here, you'd call your second LLM to analyze the conversation.
+    # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
+    analysis_response = openai.Completion.create(
+        model="gpt-4-1106-preview",  # Replace with your analysis model
+        prompt=f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}",
+        temperature=0.7,
+        max_tokens=1024,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0
+    )
+    
+    filled_template = analysis_response.choices[0].text.strip()
+    
+    # Here you would parse the filled_template to update your actual template variable
+    # This parsing will depend on how your LLM formats its response.
+    # For simplicity, I'm directly returning the filled or partially filled template.
+    
+    return filled_template
+    
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({"role": "system", "content": system_instructions})
     response_initial = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-0125",
+    model="gpt-4-1106-preview",
     #response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": system_instructions},
@@ -122,6 +145,31 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+def analyze_and_fill_template(conversation_history, template):
+    # Concatenate conversation history into a single string
+    conversation_text = " ".join([message["content"] for message in conversation_history if message["role"] in ["user", "assistant"]])
+
+    # Here, you'd call your second LLM to analyze the conversation.
+    # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
+    analysis_response = openai.Completion.create(
+        model="gpt-4-1106-preview",  # Replace with your analysis model
+        prompt=f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}",
+        temperature=0.7,
+        max_tokens=1024,
+        top_p=1.0,
+        frequency_penalty=0.0,
+        presence_penalty=0.0
+    )
+    
+    filled_template = analysis_response.choices[0].text.strip()
+    
+    # Here you would parse the filled_template to update your actual template variable
+    # This parsing will depend on how your LLM formats its response.
+    # For simplicity, I'm directly returning the filled or partially filled template.
+    
+    return filled_template
+    
 # input from user
 user_input = st.chat_input("Your prompt",disabled=st.session_state.disabled)
 # st.sidebar.markdown(st.session_state.return_filled_template)
@@ -153,6 +201,8 @@ if user_input:
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
+
+
     chat_history = {}
     chat_length = 0
     print(len(st.session_state["messages"]))
@@ -161,7 +211,11 @@ if user_input:
             chat_length= chat_length+1
             chat_history[chat_length] = {message["role"]: message["content"]}
     #print(chat_history)
-    temp_items = get_challenge_tags(str(chat_history))
+    # temp_items = get_challenge_tags(str(chat_history))
+    filled_template = analyze_and_fill_template(st.session_state.messages, Template)
+    # After calling `analyze_and_fill_template`
+    st.markdown(f"#### Updated Template:")
+    st.write(filled_template)
 
     # Sort the list based on the numeric values in descending order
     #print(items_temp)
