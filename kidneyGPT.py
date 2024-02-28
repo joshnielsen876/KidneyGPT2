@@ -1,7 +1,6 @@
 import streamlit as st
 import openai
 import os
-# from chat_internal import get_challenge_tags
 from sidebar import sidebar
 from dotenv import load_dotenv
 
@@ -66,6 +65,24 @@ Ask only one question at a time.
 
 st.title("KidneyGPT")
 
+def get_challenge_tags(chat_convo):
+    global tags_str
+    global Raw_template
+    global detected_text
+    prompt = ""
+    tag_cond = "give me the full or partialy filled use case template in markdown format: \n"
+    #tag_cond = tag_cond + " Sometimes the input tags are redundant, i.e. multiple tags have similar meaning/use, I want you to condense/club these similar tags and then classify the user-input usecases into multiple one-word clubbed/condensed/clustered tags. \n"
+    #tag_cond = tag_cond + " Based on the provided one-word tags, you must classify each user-given/input usecase (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into. each one-word tag is seperated by commas',' . Please refer to these one-word tags only, and classify the following user-input usecases (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into these mentioned tags only. You must classify each user-input AgriFood use case into multiple one-word tags given here. \n The multiple one-word tags are: "
+    #tag_cond = tag_cond + tags_str
+    prompt = tag_cond + detected_text
+
+    response = openai.ChatCompletion.create(
+                model="gpt-4-1106-preview",
+                messages=[{"role": "system", "content": prompt},
+                            {"role": "user", "content": "Analyze the user chat conversation answers and based on this please fill in the provided usecase template. Analyze the user conversation answers and then based on the provided information fill the template and give me the full or partialy filled use case template in markdown format, if you didn't find any necessary infomration to fill a blank space in the sentence of the usecase template leave the blank space as it is, and only fill in the blank spaces which are fully or partially provided in the following user conversation answer: \n \n " + chat_convo}
+                ])
+    return str(response["choices"][0]["message"]["content"])
+    
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages.append({"role": "system", "content": system_instructions})
@@ -106,7 +123,7 @@ st.markdown(
 )
 # input from user
 user_input = st.chat_input("Your prompt",disabled=st.session_state.disabled)
-st.sidebar.markdown(st.session_state.return_filled_template)
+# st.sidebar.markdown(st.session_state.return_filled_template)
 if user_input:
     st.session_state.disabled = True
     st.chat_input("The answer is being generated, please wait...", disabled=st.session_state.disabled)
@@ -143,7 +160,7 @@ if user_input:
             chat_length= chat_length+1
             chat_history[chat_length] = {message["role"]: message["content"]}
     #print(chat_history)
-    # temp_items = get_challenge_tags(str(chat_history))
+    temp_items = get_challenge_tags(str(chat_history))
 
     # Sort the list based on the numeric values in descending order
     #print(items_temp)
