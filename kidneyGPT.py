@@ -1,21 +1,21 @@
 import streamlit as st
 import openai
 import os
-from sidebar import sidebar
+# from sidebar import sidebar
 from dotenv import load_dotenv
 
 load_dotenv()
 
-sidebar()
+# sidebar()
 
 # openai_api_key = st.session_state.get("OPENAI_API_KEY")
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-if not openai_api_key:
-    st.warning(
-        "Enter your OpenAI API key in the sidebar. You can get a key at"
-        " https://platform.openai.com/account/api-keys."
-    )
+# if not openai_api_key:
+#     st.warning(
+#         "Enter your OpenAI API key in the sidebar. You can get a key at"
+#         " https://platform.openai.com/account/api-keys."
+#     )
 
 Template = """
 1. I first learned about living kidney donation through [source] and my current level of knowledge is [level].
