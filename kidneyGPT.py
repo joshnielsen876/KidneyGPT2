@@ -87,15 +87,13 @@ def analyze_and_fill_template(conversation_history, template):
     # Here, you'd call your second LLM to analyze the conversation.
     # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
     analysis_response = openai.chat.completions.create(
-        
-        model="gpt-3.5-turbo-0125",  # Replace with your analysis model
+        model="gpt-3.5-turbo-0125",  
         messages=[
         {"role": "system", "content": "Your task is to fill the gaps in the sentences present the provided usecase template. I will give you the user's written answers (extracted from a chatbot conversation) and based on the provided answers you must fill and return me the filled (either full or partial) use case template.
                             I will progressively provide you the answers in form of user conversations, you must analyze the user conversation asnwers and then fill the use case template.
                             As I will be progressively providing you the answers, you can also progressively fill the use case template"},
         {"role": "user", "content": f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}"}
-    ]
-    )
+                ])
     
     filled_template = analysis_response.choices[0].text.strip()
     
