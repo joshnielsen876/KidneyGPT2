@@ -74,7 +74,7 @@ def get_challenge_tags(chat_convo):
     #tag_cond = tag_cond + " Sometimes the input tags are redundant, i.e. multiple tags have similar meaning/use, I want you to condense/club these similar tags and then classify the user-input usecases into multiple one-word clubbed/condensed/clustered tags. \n"
     #tag_cond = tag_cond + " Based on the provided one-word tags, you must classify each user-given/input usecase (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into. each one-word tag is seperated by commas',' . Please refer to these one-word tags only, and classify the following user-input usecases (the uscase must be analyzed and extracted from a chat conversation with an AI chatbot) into these mentioned tags only. You must classify each user-input AgriFood use case into multiple one-word tags given here. \n The multiple one-word tags are: "
     #tag_cond = tag_cond + tags_str
-    prompt = tag_cond + detected_text
+    prompt = tag_cond + Template
 
     response = openai.ChatCompletion.create(
                 model="gpt-4-1106-preview",
