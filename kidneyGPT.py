@@ -94,7 +94,7 @@ def analyze_and_fill_template(conversation_history, template):
                             As I will be progressively providing you the answers, you can also progressively fill the use case template"},
         {"role": "user", "content": f"Analyze the conversation and extract information to fill the template:\nConversation: {conversation_text}\n\nTemplate: {template}"}])
     
-    filled_template = analysis_response.choices[0].text.strip()
+    filled_template = analysis_response.choices[0]["message"]["content"]
     
     # Here you would parse the filled_template to update your actual template variable
     # This parsing will depend on how your LLM formats its response.
