@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 import os
-from chat_internal import get_challenge_tags
+# from chat_internal import get_challenge_tags
 import sqlite3
 from datetime import datetime
 from random import randint
