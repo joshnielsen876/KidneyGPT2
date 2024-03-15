@@ -319,7 +319,7 @@ def analyze_and_fill_template(conversation_history, template):
     # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
     analysis_response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-0125",  
-        response_format={"type":"json_object"}
+        response_format={"type":"json_object"},
         messages=[{"role": "system", "content": "Your task is to identify and return JSON tags based on relevant information. I will give you the user's written answers \
                             (extracted from a chatbot conversation) and based on the provided answers you must fill and return the tags that will be put into the new sample of our database\
                             As I will be progressively providing you the answers, you can also progressively fill information from the schema"},
