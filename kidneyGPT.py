@@ -287,6 +287,28 @@ st.title("KidnAI")
 
 
 
+# def update_master_schema_and_create_change_log(master_schema, incremental_updates, timestep):
+#     change_log_entry = {"timestep": timestep, "changes": []}
+    
+#     for category, updates in incremental_updates.items():
+#         for tag, details in updates.items():
+#             present = details.get("present")
+#             indicative_text = details.get("indicative_text")
+#             if category in master_schema and tag in master_schema[category]:
+#                 master_schema[category][tag]["present"] = present
+#                 master_schema[category][tag]["indicative_text"] = indicative_text
+#                 change_log_entry["changes"].append({
+#                     "category": category,
+#                     "tag": tag,
+#                     "present": present,
+#                     "indicative_text": indicative_text
+#                 })
+#             else:
+#                 # Optionally handle new tags/categories if applicable
+#                 pass
+                
+#     return master_schema, change_log_entry
+
 def update_master_schema_and_create_change_log(master_schema, incremental_updates, timestep):
     change_log_entry = {"timestep": timestep, "changes": []}
     
@@ -294,18 +316,25 @@ def update_master_schema_and_create_change_log(master_schema, incremental_update
         for tag, details in updates.items():
             present = details.get("present")
             indicative_text = details.get("indicative_text")
-            if category in master_schema and tag in master_schema[category]:
-                master_schema[category][tag]["present"] = present
-                master_schema[category][tag]["indicative_text"] = indicative_text
-                change_log_entry["changes"].append({
-                    "category": category,
-                    "tag": tag,
-                    "present": present,
-                    "indicative_text": indicative_text
-                })
+            if category in master_schema:
+                if tag in master_schema[category]:
+                    # Update existing tag
+                    master_schema[category][tag]["present"] = present
+                    master_schema[category][tag]["indicative_text"] = indicative_text
+                else:
+                    # Add new tag to existing category
+                    master_schema[category][tag] = {"present": present, "indicative_text": indicative_text}
             else:
-                # Optionally handle new tags/categories if applicable
-                pass
+                # Create new category and add new tag
+                master_schema[category] = {tag: {"present": present, "indicative_text": indicative_text}}
+            
+            # Record the change log
+            change_log_entry["changes"].append({
+                "category": category,
+                "tag": tag,
+                "present": present,
+                "indicative_text": indicative_text
+            })
                 
     return master_schema, change_log_entry
 
