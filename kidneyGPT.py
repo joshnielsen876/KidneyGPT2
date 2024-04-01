@@ -7,11 +7,42 @@ from datetime import datetime
 from random import randint
 # from sidebar import sidebar
 from dotenv import load_dotenv
+import json
 
-conn = sqlite3.connect('chat_data.db')
-cursor = conn.cursor()
+# conn = sqlite3.connect('chat_data.db')
+# cursor = conn.cursor()
 
-cursor.execute('''
+# cursor.execute('''
+#     CREATE TABLE IF NOT EXISTS chat_history (
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         user_id INTEGER,
+#         session_id INTEGER,
+#         user_msg TEXT,
+#         assistant_msg TEXT,
+#         master_schema NVARCHAR,
+#         incremental_update NVARCHAR,
+#         changelog NVARCHAR,
+#         timestamp TEXT,
+#         FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
+#     )
+               
+# ''')
+# cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
+#     user_id INTEGER PRIMARY KEY,
+#     aggregated_tags TEXT,
+#     summary TEXT,
+#     engagement_metrics TEXT,
+#     last_interaction TIMESTAMP,
+#     total_interactions INTEGER
+# );
+# ''')
+
+def create_tables():
+    conn = sqlite3.connect('chat_data.db')
+    cursor = conn.cursor()
+    
+    # create chat_history 
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS chat_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -26,15 +57,24 @@ cursor.execute('''
     )
                
 ''')
-cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
-    user_id INTEGER PRIMARY KEY,
-    aggregated_tags TEXT,
-    summary TEXT,
-    engagement_metrics TEXT,
-    last_interaction TIMESTAMP,
-    total_interactions INTEGER
-);
-''')
+    # create user_profiles
+    cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
+        user_id INTEGER PRIMARY KEY,
+        aggregated_tags TEXT,
+        summary TEXT,
+        engagement_metrics TEXT,
+        last_interaction TIMESTAMP,
+        total_interactions INTEGER
+    );
+    ''')
+    
+    # #Submit changes and close database connection
+    # conn.commit()
+    # conn.close()
+    
+#Calling functions to create tables
+create_tables()
+    
 
 
 load_dotenv()
@@ -370,6 +410,37 @@ def extract_json_from_response(response):
         except json.JSONDecodeError:
           print("Error decoding JSON")  
           return None
+
+
+def insert_into_chat_history(user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog):
+    conn = sqlite3.connect('chat_data.db')
+    cursor = conn.cursor()
+    
+  
+    master_schema_json = json.dumps(master_schema)
+    incremental_update_json = json.dumps(incremental_update)
+    changelog_json = json.dumps(changelog)
+    
+    cursor.execute('''
+        INSERT INTO chat_history (user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, session_id, user_msg, assistant_msg, master_schema_json, incremental_update_json, changelog_json))
+
+    # conn.commit()
+    # conn.close()
+
+def insert_into_user_profiles(user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions):
+    conn = sqlite3.connect('chat_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO user_profiles (user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions))
+
+    # conn.commit()
+    # conn.close()
+
 
 
 if "messages" not in st.session_state:
