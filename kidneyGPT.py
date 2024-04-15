@@ -9,6 +9,8 @@ from random import randint
 from dotenv import load_dotenv
 import json
 
+DATABASE_PATH = 'chat_data.db'
+
 # conn = sqlite3.connect('chat_data.db')
 # cursor = conn.cursor()
 
@@ -37,41 +39,73 @@ import json
 # );
 # ''')
 
-def create_tables():
-    conn = sqlite3.connect('chat_data.db')
-    cursor = conn.cursor()
+# def create_tables():
+#     # conn = sqlite3.connect('chat_data.db')
+#     conn = sqlite3.connect(DATABASE_PATH)
+#     cursor = conn.cursor()
     
-    # create chat_history 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS chat_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        session_id INTEGER,
-        user_msg TEXT,
-        assistant_msg TEXT,
-        master_schema NVARCHAR,
-        incremental_update NVARCHAR,
-        changelog NVARCHAR,
-        timestamp TEXT,
-        FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
-    )
+#     # create chat_history 
+#     cursor.execute('''
+#     CREATE TABLE IF NOT EXISTS chat_history (
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         user_id INTEGER,
+#         session_id INTEGER,
+#         user_msg TEXT,
+#         assistant_msg TEXT,
+#         master_schema NVARCHAR,
+#         incremental_update NVARCHAR,
+#         changelog NVARCHAR,
+#         timestamp TEXT,
+#         FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
+#     )
                
-''')
-    # create user_profiles
-    cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
-        user_id INTEGER PRIMARY KEY,
-        aggregated_tags TEXT,
-        summary TEXT,
-        engagement_metrics TEXT,
-        last_interaction TIMESTAMP,
-        total_interactions INTEGER
-    );
-    ''')
+# ''')
+#     # create user_profiles
+#     cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
+#         user_id INTEGER PRIMARY KEY,
+#         aggregated_tags TEXT,
+#         summary TEXT,
+#         engagement_metrics TEXT,
+#         last_interaction TIMESTAMP,
+#         total_interactions INTEGER
+#     );
+#     ''')
     
-    # #Submit changes and close database connection
-    # conn.commit()
-    # conn.close()
-    
+#     # #Submit changes and close database connection
+#     conn.commit()
+#     conn.close()
+def create_tables():
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            session_id INTEGER,
+            user_msg TEXT,
+            assistant_msg TEXT,
+            master_schema NVARCHAR,
+            incremental_update NVARCHAR,
+            changelog NVARCHAR,
+            timestamp TEXT,
+            FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
+        )''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            user_id INTEGER PRIMARY KEY,
+            aggregated_tags TEXT,
+            summary TEXT,
+            engagement_metrics TEXT,
+            last_interaction TIMESTAMP,
+            total_interactions INTEGER
+        )''')
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    finally:
+        conn.close()
+        
 #Calling functions to create tables
 create_tables()
     
@@ -411,26 +445,44 @@ def extract_json_from_response(response):
           print("Error decoding JSON")  
           return None
 
+# def query_database():
+#     # conn = sqlite3.connect('chat_data.db')
+#     conn = sqlite3.connect(DATABASE_PATH)
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT * FROM chat_history")
+#     rows = cursor.fetchall()
+#     for row in rows:
+#         print(row)
+#     conn.close()
+    
 
 def insert_into_chat_history(user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog):
-    conn = sqlite3.connect('chat_data.db')
-    cursor = conn.cursor()
+    try:
+        # conn = sqlite3.connect('chat_data.db')
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
     
-  
-    master_schema_json = json.dumps(master_schema)
-    incremental_update_json = json.dumps(incremental_update)
-    changelog_json = json.dumps(changelog)
+        master_schema_json = json.dumps(master_schema)
+        incremental_update_json = json.dumps(incremental_update)
+        changelog_json = json.dumps(changelog)
     
-    cursor.execute('''
-        INSERT INTO chat_history (user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, session_id, user_msg, assistant_msg, master_schema_json, incremental_update_json, changelog_json))
+        cursor.execute('''
+            INSERT INTO chat_history (user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, session_id, user_msg, assistant_msg, master_schema_json, incremental_update_json, changelog_json))
 
-    # conn.commit()
-    # conn.close()
+        conn.commit()
+        # query_database()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        # query_database()
+    finally:
+        conn.close()
+    
 
 def insert_into_user_profiles(user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions):
-    conn = sqlite3.connect('chat_data.db')
+    # conn = sqlite3.connect('chat_data.db')
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -438,13 +490,15 @@ def insert_into_user_profiles(user_id, aggregated_tags, summary, engagement_metr
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions))
 
-    # conn.commit()
-    # conn.close()
+    conn.commit()
+    conn.close()
+    # query_database()
 
 
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+print('Initializing messages in session state:', 'messages' in st.session_state)
+if 'messages' not in st.session_state:
+    st.session_state['messages'] = []
     st.session_state.messages.append({"role": "system", "content": system_instructions})
     response_initial = openai.ChatCompletion.create(
     model="gpt-3.5-turbo-0125",
