@@ -8,8 +8,37 @@ from random import randint
 # from sidebar import sidebar
 from dotenv import load_dotenv
 import json
+import uuid
 
 DATABASE_PATH = 'chat_data.db'
+
+def query_database():
+    try:
+        # 连接数据库
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+        # 执行查询操作
+        cursor.execute("SELECT * FROM chat_history")
+
+        # 检索所有结果
+        rows = cursor.fetchall()
+
+        # 打印结果
+        if not rows:
+            print("No data found in the table.")
+        else:
+            print("Data retrieved successfully:")
+            for row in rows:
+                print(row)
+
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        # 关闭数据库连接
+        conn.close()
+        
+
 
 # conn = sqlite3.connect('chat_data.db')
 # cursor = conn.cursor()
@@ -116,7 +145,8 @@ load_dotenv()
 # sidebar()
 
 # openai_api_key = st.session_state.get("OPENAI_API_KEY")
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# openai_api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key= ""
 
 # if not openai_api_key:
 #     st.warning(
@@ -433,10 +463,12 @@ def analyze_and_fill_template(conversation_history, template):
     return filled_template
 
 def extract_json_from_response(response):
+    print("Response: {}".format(response))
     start_marker = "<<<"
     end_marker = ">>>"
     start_index = response.find(start_marker)
     end_index = response.find(end_marker, start_index)
+    print("Start index {}, end_index {}".format(start_index, end_index))
     if start_index != -1 and end_index != -1:
         json_str = response[start_index + len(start_marker):end_index].strip()
         try:
@@ -566,7 +598,31 @@ if user_input:
 
         message_placeholder.markdown(full_response)
         #st.chat_input("Your prompt",disabled=True)
+        
 
+
+    filled_template = analyze_and_fill_template(st.session_state.messages, Template)
+    
+    incremental_update = extract_json_from_response(filled_template)
+
+    if incremental_update:
+      aggregated_tags = incremental_update.get("aggregated_tags")
+      summary = incremental_update.get("summary")
+      engagement_metrics = incremental_update.get("engagement_metrics")
+      last_interaction = incremental_update.get("last_interaction")
+      total_interactions = incremental_update.get("total_interactions")
+
+      master_schema, change_log_entry = update_master_schema_and_create_change_log(st.session_state.master_schema, incremental_update, len(st.session_state.messages))
+
+      temp_user_id = str(uuid.uuid4())
+      temp_session_id = str(uuid.uuid4())
+
+      insert_into_chat_history(temp_user_id, temp_session_id, user_input, full_response, master_schema, incremental_update, change_log_entry)
+      insert_into_user_profiles(temp_user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions)
+      
+      query_database()
+      
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 
