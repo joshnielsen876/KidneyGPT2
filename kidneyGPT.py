@@ -92,8 +92,8 @@ load_dotenv()
 
 
 # openai_api_key = st.session_state.get("OPENAI_API_KEY")
-# openai_api_key = st.secrets["OPENAI_API_KEY"]
-openai.api_key= ""
+openai_api_key = st.secrets["OPENAI_API_KEY"]
+# openai.api_key= ""
 
 # if not openai_api_key:
 #     st.warning(
