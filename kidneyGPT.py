@@ -9,13 +9,18 @@ from random import randint
 from dotenv import load_dotenv
 import json
 import uuid
+import re
+from datetime import datetime
 
 DATABASE_PATH = 'chat_data.db'
+# print(f"Using database at: {os.path.abspath(DATABASE_PATH)}")
 
 def query_database():
     try:
         # 连接数据库
         conn = sqlite3.connect(DATABASE_PATH)
+        # print(f"Database Path: {DATABASE_PATH}")
+
         cursor = conn.cursor()
 
         # 执行查询操作
@@ -24,13 +29,13 @@ def query_database():
         # 检索所有结果
         rows = cursor.fetchall()
 
-        # 打印结果
-        if not rows:
-            print("No data found in the table.")
-        else:
-            print("Data retrieved successfully:")
-            for row in rows:
-                print(row)
+        # # 打印结果
+        # if not rows:
+        #     print("No data found in the table.")
+        # else:
+        #     print("Data retrieved successfully:")
+        #     for row in rows:
+        #         print(row)
 
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
@@ -40,78 +45,16 @@ def query_database():
         
 
 
-# conn = sqlite3.connect('chat_data.db')
-# cursor = conn.cursor()
-
-# cursor.execute('''
-#     CREATE TABLE IF NOT EXISTS chat_history (
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         user_id INTEGER,
-#         session_id INTEGER,
-#         user_msg TEXT,
-#         assistant_msg TEXT,
-#         master_schema NVARCHAR,
-#         incremental_update NVARCHAR,
-#         changelog NVARCHAR,
-#         timestamp TEXT,
-#         FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
-#     )
-               
-# ''')
-# cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
-#     user_id INTEGER PRIMARY KEY,
-#     aggregated_tags TEXT,
-#     summary TEXT,
-#     engagement_metrics TEXT,
-#     last_interaction TIMESTAMP,
-#     total_interactions INTEGER
-# );
-# ''')
-
-# def create_tables():
-#     # conn = sqlite3.connect('chat_data.db')
-#     conn = sqlite3.connect(DATABASE_PATH)
-#     cursor = conn.cursor()
-    
-#     # create chat_history 
-#     cursor.execute('''
-#     CREATE TABLE IF NOT EXISTS chat_history (
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         user_id INTEGER,
-#         session_id INTEGER,
-#         user_msg TEXT,
-#         assistant_msg TEXT,
-#         master_schema NVARCHAR,
-#         incremental_update NVARCHAR,
-#         changelog NVARCHAR,
-#         timestamp TEXT,
-#         FOREIGN KEY (user_id) REFERENCES user_profiles(user_id)
-#     )
-               
-# ''')
-#     # create user_profiles
-#     cursor.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
-#         user_id INTEGER PRIMARY KEY,
-#         aggregated_tags TEXT,
-#         summary TEXT,
-#         engagement_metrics TEXT,
-#         last_interaction TIMESTAMP,
-#         total_interactions INTEGER
-#     );
-#     ''')
-    
-#     # #Submit changes and close database connection
-#     conn.commit()
-#     conn.close()
 def create_tables():
     try:
         conn = sqlite3.connect(DATABASE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")  # 启用外键支持
         cursor = conn.cursor()
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS chat_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            session_id INTEGER,
+            user_id TEXT,
+            session_id TEXT,
             user_msg TEXT,
             assistant_msg TEXT,
             master_schema NVARCHAR,
@@ -122,18 +65,22 @@ def create_tables():
         )''')
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_profiles (
-            user_id INTEGER PRIMARY KEY,
+            time TEXT PRIMARY KEY,
+            user_id TEXT,
             aggregated_tags TEXT,
             summary TEXT,
             engagement_metrics TEXT,
-            last_interaction TIMESTAMP,
+            last_interaction TEXT,
             total_interactions INTEGER
+            
         )''')
         conn.commit()
     except sqlite3.Error as e:
         print(f"Database error: {e}")
     finally:
         conn.close()
+
+
         
 #Calling functions to create tables
 create_tables()
@@ -142,7 +89,7 @@ create_tables()
 
 load_dotenv()
 
-# sidebar()
+
 
 # openai_api_key = st.session_state.get("OPENAI_API_KEY")
 # openai_api_key = st.secrets["OPENAI_API_KEY"]
@@ -363,8 +310,8 @@ Category descriptions are given first, followed by the JSON schema to fill in wi
 The following JSON schema shows how you should report your analysis of the conversation. Replace 'None' with True if the factor is described by the user. 
     For each True entry, please also provide the text from the user that indicates why the tag is present for the user. You only need to report the tags which are present. 
     Here is the master schema:{master_schema}\
-Remember, you don't need to update the entire master schema in your response. Only return the JSON portion of the new tags you've discovered, delimited by special markers
-'<<<' and '>>>', and we will update the master schema separately. '''
+Remember, you don't need to update the entire master schema in your response. Only return the JSON portion of the new tags you've discovered, enclosed within special markers using ```json and ```; we will update the master schema separately.
+'''
 
 
 system_instructions = f"""
@@ -389,29 +336,11 @@ When asking questions, ask only one at a time. Also note that the schema is only
 
 st.title("KidnAI")
 
+if 'user_id' not in st.session_state:
+    st.session_state['user_id'] = str(uuid.uuid4())
+user_id = st.session_state['user_id']
 
 
-# def update_master_schema_and_create_change_log(master_schema, incremental_updates, timestep):
-#     change_log_entry = {"timestep": timestep, "changes": []}
-    
-#     for category, updates in incremental_updates.items():
-#         for tag, details in updates.items():
-#             present = details.get("present")
-#             indicative_text = details.get("indicative_text")
-#             if category in master_schema and tag in master_schema[category]:
-#                 master_schema[category][tag]["present"] = present
-#                 master_schema[category][tag]["indicative_text"] = indicative_text
-#                 change_log_entry["changes"].append({
-#                     "category": category,
-#                     "tag": tag,
-#                     "present": present,
-#                     "indicative_text": indicative_text
-#                 })
-#             else:
-#                 # Optionally handle new tags/categories if applicable
-#                 pass
-                
-#     return master_schema, change_log_entry
 
 def update_master_schema_and_create_change_log(master_schema, incremental_updates, timestep):
     change_log_entry = {"timestep": timestep, "changes": []}
@@ -443,92 +372,163 @@ def update_master_schema_and_create_change_log(master_schema, incremental_update
     return master_schema, change_log_entry
 
 
+
+
 def analyze_and_fill_template(conversation_history, template):
     # Concatenate conversation history into a single string
-    # OR do we take only the last step as input?
-    conversation_text = " ".join([message["content"] for message in conversation_history if message["role"] in ["user", "assistant"]])
+    conversation_text = " ".join([
+        message["content"] for message in conversation_history
+        if message["role"] in ["user", "assistant"]
+    ])
 
-    # Here, you'd call your second LLM to analyze the conversation.
-    # For demonstration, I'll call the same OpenAI API, but you'd replace this with your specific analysis call.
+    # Call OpenAI API to analyze the conversation
     analysis_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-0125",  
-        response_format={"type":"json_object"},
-        messages=[{"role": "system", "content": "Your task is to identify and return JSON tags based on relevant information. I will give you the user's written answers \
-                            (extracted from a chatbot conversation) and based on the provided answers you must fill and return the tags that will be put into the new sample of our database\
-                            As I will be progressively providing you the answers, you can also progressively fill information from the schema"},
-        {"role": "user", "content": f"Analyze the conversation and extract living kidney donor profile tags in JSON format, with coarse and granular tags \
-                                    as shown: \nConversation: {conversation_text}\n\nTemplate: {template}"}])
-    
+        model="gpt-3.5-turbo-0125",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Your task is to analyze the conversation and extract relevant tags "
+                    "in JSON format. Ensure that all property names and string values use double quotes, "
+                    "and that the JSON is properly formatted and escaped. "
+                    "Please output only the JSON data, enclosed within "
+                    "```json\n...\n```."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Please analyze the following conversation and extract tags based on the template:\n\n"
+                    f"Conversation: {conversation_text}\n\n"
+                    f"Template: {template}"
+                )
+            }
+        ]
+    )
+
+    # Retrieve the response
     filled_template = analysis_response.choices[0]["message"]["content"]
+
+    print(f"Filled Template with markers: {filled_template}")
+
     return filled_template
 
-def extract_json_from_response(response):
-    print("Response: {}".format(response))
-    start_marker = "<<<"
-    end_marker = ">>>"
-    start_index = response.find(start_marker)
-    end_index = response.find(end_marker, start_index)
-    print("Start index {}, end_index {}".format(start_index, end_index))
-    if start_index != -1 and end_index != -1:
-        json_str = response[start_index + len(start_marker):end_index].strip()
-        try:
-          return json.loads(json_str)
-        except json.JSONDecodeError:
-          print("Error decoding JSON")  
-          return None
 
-# def query_database():
-#     # conn = sqlite3.connect('chat_data.db')
-#     conn = sqlite3.connect(DATABASE_PATH)
-#     cursor = conn.cursor()
-#     cursor.execute("SELECT * FROM chat_history")
-#     rows = cursor.fetchall()
-#     for row in rows:
-#         print(row)
-#     conn.close()
-    
+
+
+
+
+def extract_json_from_response(response):
+    try:
+        # print(f"Response content before JSON parsing: {response}")
+        
+        # Use regular expression to extract content between ```json and ```
+        json_match = re.search(r'```json\s*(\{[\s\S]*?\})\s*```', response)
+        if json_match:
+            json_str = json_match.group(1).strip()
+            # print(f"Extracted JSON string: {json_str}")
+            
+            # Clean up the JSON string to ensure it's valid
+            json_str = json_str.replace('\\', '\\\\')  # Escape backslashes
+            json_str = json_str.replace('\\"', '\\\\"')  # Escape existing escaped quotes
+            # Do not replace single quotes
+            json_str = json_str.replace("None", "null")
+            json_str = json_str.replace("False", "false")
+            json_str = json_str.replace("True", "true")
+            
+            # Parse the JSON string
+            parsed_json = json.loads(json_str)
+            # print(f"Parsed JSON: {parsed_json}")
+            return parsed_json
+        else:
+            print("No JSON content found between markers.")
+            return None
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}")
+        return None
+
+
+
+
 
 def insert_into_chat_history(user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog):
     try:
-        # conn = sqlite3.connect('chat_data.db')
         conn = sqlite3.connect(DATABASE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")  
         cursor = conn.cursor()
-    
+        
+
         master_schema_json = json.dumps(master_schema)
         incremental_update_json = json.dumps(incremental_update)
         changelog_json = json.dumps(changelog)
-    
+
+        
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
         cursor.execute('''
             INSERT INTO chat_history (user_id, session_id, user_msg, assistant_msg, master_schema, incremental_update, changelog)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (user_id, session_id, user_msg, assistant_msg, master_schema_json, incremental_update_json, changelog_json))
 
         conn.commit()
-        # query_database()
+       
+
     except sqlite3.Error as e:
-        print(f"An error occurred: {e.args[0]}")
-        # query_database()
+        print(f"Database error occurred: {e}")
     finally:
         conn.close()
+
+
     
 
-def insert_into_user_profiles(user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions):
-    # conn = sqlite3.connect('chat_data.db')
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        INSERT INTO user_profiles (user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions))
+def insert_into_user_profiles(time, user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions):
+    try:
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+       
+        aggregated_tags_json = json.dumps(aggregated_tags) if isinstance(aggregated_tags, (list, dict)) else str(aggregated_tags)
+        summary_json = json.dumps(summary) if isinstance(summary, (list, dict)) else str(summary)
+        engagement_metrics_json = json.dumps(engagement_metrics) if isinstance(engagement_metrics, (list, dict)) else str(engagement_metrics)
 
-    conn.commit()
-    conn.close()
-    # query_database()
+        # 确保时间戳为字符串
+        if isinstance(last_interaction, datetime):
+            last_interaction_str = last_interaction.isoformat()
+        else:
+            last_interaction_str = str(last_interaction)
+
+        
+        total_interactions_int = int(total_interactions) if total_interactions is not None else 0
+
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+
+
+        cursor.execute('''
+            INSERT INTO user_profiles (time, user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (time, user_id, aggregated_tags_json, summary_json, engagement_metrics_json, last_interaction_str, total_interactions_int))
+
+        conn.commit()
+        # print(f"Data inserted successfully for user_id: {user_id}")
+
+    except sqlite3.Error as e:
+        print(f"Database error occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 
-print('Initializing messages in session state:', 'messages' in st.session_state)
+
+
+
+
+
+
+
+# print('Initializing messages in session state:', 'messages' in st.session_state)
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
     st.session_state.messages.append({"role": "system", "content": system_instructions})
@@ -540,7 +540,7 @@ if 'messages' not in st.session_state:
         {"role": "user", "content": "give me a brief introduction and engage me into a interactive conversation by asking me questions to fill in the usecase template !"}
     ]
     )
-    print(response_initial.choices[0])
+    # print(response_initial.choices[0])
     st.session_state.messages.append({"role": "assistant", "content": response_initial.choices[0]["message"]["content"]})
 
 # initialize model
@@ -570,21 +570,44 @@ st.markdown(
     unsafe_allow_html=True,
 )
     
+
+def save_user_state():
+    now = datetime.now() 
+    time = now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    user_id = st.session_state['user_id']
+    aggregated_tags = st.session_state.master_schema
+    summary = "Summary of user interaction"
+    engagement_metrics = "User engagement data"
+    last_interaction = datetime.now()
+    total_interactions = len(st.session_state.messages)
+
+   
+    insert_into_user_profiles(
+        time,
+        user_id,
+        aggregated_tags,
+        summary,
+        engagement_metrics,
+        last_interaction,
+        total_interactions
+    )
+
+
 # input from user
-user_input = st.chat_input("Your prompt",disabled=st.session_state.disabled)
-# st.sidebar.markdown(st.session_state.return_filled_template)
+user_input = st.chat_input("Your prompt", disabled=st.session_state.disabled)
+
 if user_input:
     st.session_state.disabled = True
-    st.chat_input("The answer is being generated, please wait...", disabled=st.session_state.disabled)
     st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    # Display user message
     with st.chat_message("user"):
         st.markdown(user_input)
-
-    # generate responses
+    
+    # Generate assistant's reply
+    full_response = ""
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        full_response = ""
-
         for response in openai.ChatCompletion.create(
             model=st.session_state.model,
             messages=[
@@ -595,41 +618,58 @@ if user_input:
         ):
             full_response += response.choices[0].delta.get("content", "")
             message_placeholder.markdown(full_response + "▌")
-
-        message_placeholder.markdown(full_response)
-        #st.chat_input("Your prompt",disabled=True)
         
-
-
-    filled_template = analyze_and_fill_template(st.session_state.messages, Template)
+        message_placeholder.markdown(full_response)
     
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+    # Analyze and fill template
+    filled_template = analyze_and_fill_template(st.session_state.messages, Template)
+
+    # Extract and update JSON data
     incremental_update = extract_json_from_response(filled_template)
-
     if incremental_update:
-      aggregated_tags = incremental_update.get("aggregated_tags")
-      summary = incremental_update.get("summary")
-      engagement_metrics = incremental_update.get("engagement_metrics")
-      last_interaction = incremental_update.get("last_interaction")
-      total_interactions = incremental_update.get("total_interactions")
+        st.session_state.master_schema, change_log_entry = update_master_schema_and_create_change_log(
+            st.session_state.master_schema, incremental_update, len(st.session_state.messages)
+        )
+        
+        # Calculate interaction count
+        chat_length = len([msg for msg in st.session_state.messages if msg["role"] in ["user", "assistant"]])
+        
+        # Insert data into chat_history
+        temp_user_id = st.session_state.get('user_id', str(uuid.uuid4()))
+        temp_session_id = st.session_state.get('session_id', str(uuid.uuid4()))
+        
+       
+        save_user_state()
 
-      master_schema, change_log_entry = update_master_schema_and_create_change_log(st.session_state.master_schema, incremental_update, len(st.session_state.messages))
+        
+        insert_into_chat_history(
+            user_id, temp_session_id, user_input, full_response,
+            st.session_state.master_schema, incremental_update, change_log_entry
+        )
 
-      temp_user_id = str(uuid.uuid4())
-      temp_session_id = str(uuid.uuid4())
+        
+        # Save user state to user_profiles
+        save_user_state()
+    else:
+        print("No incremental update available.")
 
-      insert_into_chat_history(temp_user_id, temp_session_id, user_input, full_response, master_schema, incremental_update, change_log_entry)
-      insert_into_user_profiles(temp_user_id, aggregated_tags, summary, engagement_metrics, last_interaction, total_interactions)
-      
-      query_database()
-      
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    # Re-enable input after response
+    st.session_state.disabled = False
+
+    # Optionally display updated master schema
+    # st.markdown(f"#### Updated Master Schema:")
+    # st.write(st.session_state.master_schema)
+
+
+
 
 
 
     chat_history = {}
     chat_length = 0
-    print(len(st.session_state["messages"]))
+    # print(len(st.session_state["messages"]))
     for message in st.session_state["messages"]:
         if (message["role"] == "user") or (message["role"] == "assistant"):
             chat_length= chat_length+1
@@ -644,9 +684,6 @@ if user_input:
     st.markdown(f"#### Updated Master Schema:")
     st.write(master_schema)
 
-    # Sort the list based on the numeric values in descending order
-    #print(items_temp)
-    # st.session_state.return_filled_template = "Filled Template: \n" + temp_items
 
     st.session_state.disabled = False
     st.rerun()
