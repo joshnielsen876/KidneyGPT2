@@ -308,7 +308,7 @@ Category descriptions are given first, followed by the JSON schema to fill in wi
 18. additional_thoughts: Any additional thoughts or questions the user has about living kidney donation. 
 
 The following JSON schema shows how you should report your analysis of the conversation. Replace 'None' with True if the factor is described by the user. 
-    For each True entry, please also provide the text from the user that indicates why the tag is present for the user. You only need to report the tags which are present. 
+    For each True entry, please also provide the text FROM THE USER (NOT from the chatbot!) that indicates why the tag is present for the user. You only need to report the tags which are present. 
     Here is the master schema:{master_schema}\
 Remember, you don't need to update the entire master schema in your response. Only return the JSON portion of the new tags you've discovered, enclosed within special markers using ```json and ```; we will update the master schema separately.
 '''
