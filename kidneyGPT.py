@@ -699,7 +699,7 @@ if user_input:
         print("No incremental update available.")
     
     #Display the pretty version of the schema in the sidebar
-    display_master_schema_in_sidebar(master_schema)
+    # display_master_schema_in_sidebar(master_schema)
     # Re-enable input after response
     st.session_state.disabled = False
 
