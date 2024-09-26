@@ -389,25 +389,24 @@ def master_schema_to_dataframe(master_schema):
     return df
 
 def display_master_schema_in_sidebar(master_schema):
-    # Convert master schema to dataframe
     df = master_schema_to_dataframe(master_schema)
-    
-    # Hide the 'Category' column by only selecting the other columns
-    df_display = df.drop(columns=['Category'])
+    df_display = df.drop(columns=['Category'])  # Assuming you're still hiding the 'Category' column.
 
-    # Ensure session state for expander toggle exists
+    # Check if the session state variable exists and set it to True if it doesn't.
     if "show_schema" not in st.session_state:
-        st.session_state["show_schema"] = True  # Set to True to display the expander initially
+        st.session_state["show_schema"] = True
 
-    # st.sidebar.title("Master Schema Overview")
+    # Use a unique key for the checkbox. You can use a static string if this function is called only once per session.
+    show_schema_checkbox = st.sidebar.checkbox("Show Master Schema", value=st.session_state["show_schema"], key="unique_show_schema_checkbox")
 
-    # Add a checkbox to control visibility
-    st.session_state["show_schema"] = st.sidebar.checkbox("Show Master Schema", value=st.session_state["show_schema"])
+    # Update the session state based on the checkbox's status.
+    st.session_state["show_schema"] = show_schema_checkbox
 
-    # Display the expander only if the checkbox is checked
+    # Only display the DataFrame if the checkbox is checked.
     if st.session_state["show_schema"]:
-        with st.sidebar.expander("Show Master Schema", expanded=True):
+        with st.sidebar.expander("View Master Schema", expanded=True):
             st.table(df_display)
+
 
 
 
