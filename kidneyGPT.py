@@ -11,6 +11,7 @@ import json
 import uuid
 import re
 from datetime import datetime
+import pandas as pd
 
 DATABASE_PATH = 'chat_data.db'
 # print(f"Using database at: {os.path.abspath(DATABASE_PATH)}")
@@ -92,8 +93,8 @@ load_dotenv()
 
 
 # openai_api_key = st.session_state.get("OPENAI_API_KEY")
-openai_api_key = st.secrets["OPENAI_API_KEY"]
-# openai.api_key= ""
+# openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key= "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"
 
 # if not openai_api_key:
 #     st.warning(
@@ -332,7 +333,7 @@ Encourage reflection on factors influencing the decision, including health, ethi
 Providing Information:
 Share relevant information about living kidney donation as prompted by the user’s questions or concerns. 
 Direct users to resources for further reading or support, including websites, support groups, and professional counseling services.
-When asking questions, ask only one at a time. Also note that the schema is only for you, not the user."""
+When asking questions, ask ONLY ONE at a time."""
 
 st.title("KidnAI")
 
@@ -370,6 +371,44 @@ def update_master_schema_and_create_change_log(master_schema, incremental_update
             })
                 
     return master_schema, change_log_entry
+
+
+
+def master_schema_to_dataframe(master_schema):
+    data = []
+    for category, tags in master_schema.items():
+        for tag, details in tags.items():
+            present = details.get('present')
+            indicative_text = details.get('indicative_text')
+            data.append({
+                'Category': category,
+                'Tag': tag,
+                'Present': present,
+                'Indicative Text': indicative_text
+            })
+    df = pd.DataFrame(data)
+    return df
+
+def display_master_schema_in_sidebar(master_schema):
+    # Convert master schema to dataframe
+    df = master_schema_to_dataframe(master_schema)
+    
+    # Hide the 'Category' column by only selecting the other columns
+    df_display = df.drop(columns=['Category'])
+
+    # Ensure session state for expander toggle exists
+    if "show_schema" not in st.session_state:
+        st.session_state["show_schema"] = True  # Set to True to display the expander initially
+
+    # st.sidebar.title("Master Schema Overview")
+
+    # Add a checkbox to control visibility
+    st.session_state["show_schema"] = st.sidebar.checkbox("Show Master Schema", value=st.session_state["show_schema"])
+
+    # Display the expander only if the checkbox is checked
+    if st.session_state["show_schema"]:
+        with st.sidebar.expander("Show Master Schema", expanded=True):
+            st.table(df_display)
 
 
 
@@ -521,13 +560,6 @@ def insert_into_user_profiles(time, user_id, aggregated_tags, summary, engagemen
 
 
 
-
-
-
-
-
-
-
 # print('Initializing messages in session state:', 'messages' in st.session_state)
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
@@ -535,13 +567,16 @@ if 'messages' not in st.session_state:
     response_initial = openai.ChatCompletion.create(
     model="gpt-3.5-turbo-0125",
     #response_format={ "type": "json_object" },
+    #add temperature setting for consistency
     messages=[
         {"role": "system", "content": system_instructions},
         {"role": "user", "content": "give me a brief introduction and engage me into a interactive conversation by asking me questions to fill in the usecase template !"}
-    ]
+    ],
+    temperature = 0
     )
     # print(response_initial.choices[0])
     st.session_state.messages.append({"role": "assistant", "content": response_initial.choices[0]["message"]["content"]})
+
 
 # initialize model
 if "model" not in st.session_state:
@@ -552,6 +587,14 @@ if 'return_filled_template' not in st.session_state:
     st.session_state.return_filled_template = f"Filled Template: \n {Template}"
 if 'master_schema' not in st.session_state:
     st.session_state.master_schema = master_schema
+# Ensure session state for expander toggle exists
+if "expander_open" not in st.session_state:
+    st.session_state.expander_open = True  # Set initial state
+
+# Call display function as early as possible
+display_master_schema_in_sidebar(st.session_state.master_schema)
+
+# Your other logic for processing the chat and user input below
 
 # Setting system message
 
@@ -632,7 +675,9 @@ if user_input:
         st.session_state.master_schema, change_log_entry = update_master_schema_and_create_change_log(
             st.session_state.master_schema, incremental_update, len(st.session_state.messages)
         )
-        
+       
+        #
+
         # Calculate interaction count
         chat_length = len([msg for msg in st.session_state.messages if msg["role"] in ["user", "assistant"]])
         
@@ -654,18 +699,15 @@ if user_input:
         save_user_state()
     else:
         print("No incremental update available.")
-
+    
+    #Display the pretty version of the schema in the sidebar
+    display_master_schema_in_sidebar(master_schema)
     # Re-enable input after response
     st.session_state.disabled = False
 
     # Optionally display updated master schema
     # st.markdown(f"#### Updated Master Schema:")
     # st.write(st.session_state.master_schema)
-
-
-
-
-
 
     chat_history = {}
     chat_length = 0
