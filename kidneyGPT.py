@@ -390,7 +390,8 @@ def master_schema_to_dataframe(master_schema):
 
 def display_master_schema_in_sidebar(master_schema):
     df = master_schema_to_dataframe(master_schema)
-    df_display = df.drop(columns=['Category'])  # Assuming you're still hiding the 'Category' column.
+    # df_display = df.drop(columns=['Category'])  # Assuming you're still hiding the 'Category' column.
+    df_display = df
 
     # Check if the session state variable exists and set it to True if it doesn't.
     if "show_schema" not in st.session_state:
