@@ -334,7 +334,7 @@ Share relevant information about living kidney donation as prompted by the userâ
 Direct users to resources for further reading or support, including websites, support groups, and professional counseling services.
 When asking questions, ask ONLY ONE at a time."""
 
-st.title("KidnAI")
+st.title("Transplant AI Mentor")
 
 if 'user_id' not in st.session_state:
     st.session_state['user_id'] = str(uuid.uuid4())
